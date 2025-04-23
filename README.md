@@ -7,6 +7,50 @@ This playground demonstrates mutual TLS (mTLS) authentication between a Go clien
 
 This model avoids a shared Certificate Authority (CA), providing strong isolation between server/client pairs.
 
+## High-Level Overview
+
+```mermaid
+graph LR
+    subgraph Client Side
+        C(Client App)
+        CKey(client.key)
+        CCert(client.crt)
+        ServerCertTrust(server.crt as Trusted Root)
+    end
+
+    subgraph Server Side
+        S(Server App)
+        SKey(server.key)
+        SCert(server.crt)
+        KnownClients(knownClients.txt)
+    end
+
+    %% Client presents its identity
+    CKey -- Signs Handshake --> C
+    CCert -- Public Identity --> C
+    C -- Presents Cert --> S
+
+    %% Server presents its identity
+    SKey -- Signs Handshake --> S
+    SCert -- Public Identity --> S
+    S -- Presents Cert --> C
+
+    %% How Trust & Auth is established
+    ServerCertTrust -- Used by --> C -- Verifies --> SCert
+    KnownClients -- Used by --> S -- Verifies CN/Fingerprint of --> CCert
+
+    %% Dashed lines for config/loading
+    style ServerCertTrust fill:#eee,stroke:#333,stroke-dasharray: 5 5
+    style KnownClients fill:#eee,stroke:#333,stroke-dasharray: 5 5
+    CKey -.-> C
+    CCert -.-> C
+    ServerCertTrust -.-> C
+    SKey -.-> S
+    SCert -.-> S
+    KnownClients -.-> S
+
+```
+
 It is implemented as a single CLI application with `server` and `client` subcommands.
 
 ## Structure
